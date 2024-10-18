@@ -30,7 +30,7 @@ djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.0
 sentry-sdk==1.9.8
 pip-check==2.7
-
+dj_database_url
 #suspense
 flake8-polyfill==1.0.2
 django-pymemcache==1.0.0

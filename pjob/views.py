@@ -2,7 +2,7 @@ import json
 import math
 import re
 import os
-import boto
+import boto3
 import tinys3
 import random
 
@@ -1048,7 +1048,7 @@ def job_apply(request, job_id):
                         )
                         msg.attach(part)
                         os.remove(str(request.user.email) + ".docx")
-                    boto.connect_ses(
+                    boto3.connect_ses(
                         aws_access_key_id=settings.AM_ACCESS_KEY,
                         aws_secret_access_key=settings.AM_PASS_KEY,
                     )
