@@ -50,3 +50,4 @@ olefile==0.46
 tinys3==0.1.12
 # utils==1.0.1
 # django-web-profiler==0.1.4
+boto3

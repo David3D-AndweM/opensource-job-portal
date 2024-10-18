@@ -1,37 +1,52 @@
-from boto.s3.connection import S3Connection
-from boto.s3.key import Key
+import boto3
 from django.conf import settings
 import mimetypes
-import boto
 
 
 class AWS:
+    def __init__(self):
+        # Initialize the S3 and CloudFront clients
+        self.s3_client = boto3.client(
+            's3',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_S3_REGION_NAME  # Ensure you have this in your settings
+        )
+        self.cloudfront_client = boto3.client(
+            'cloudfront',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        )
+
     def push_to_s3(
         self, file_obj, bucket_name=None, folder="", new_name=None, public_read=True
     ):
-        self.conn = S3Connection(
-            settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY
+        filename = new_name or file_obj.name  # Use new_name or fall back to the original file name
+        key = f"{folder}/{filename}" if folder else filename  # Construct the key
+
+        # Guess the MIME type
+        mime = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
+        # Upload the file
+        self.s3_client.upload_fileobj(
+            file_obj,
+            bucket_name,
+            key,
+            ExtraArgs={'ContentType': mime, 'ACL': 'public-read' if public_read else 'private'}
         )
-        filename = new_name
-        content = file_obj.read()
 
-        key = folder + new_name if new_name else filename
-
-        bucket = self.conn.get_bucket(bucket_name=bucket_name)
-
-        mime = mimetypes.guess_type(filename)[0]
-        k = Key(bucket)
-        k.key = key  # folder + filename
-        k.set_metadata("Content-Type", mime)
-        k.set_contents_from_string(content)
-        if public_read:
-            k.set_acl("public-read")
-
-        key_buc = [k.key, bucket_name]
-        return key_buc
+        return [key, bucket_name]
 
     def cloudfront_invalidate(self, paths):
-        c = boto.connect_cloudfront(
-            settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY
+        # Create invalidation for the specified paths
+        distribution_id = settings.CLOUDFRONT_DISTRIBUTION_ID  # Ensure you have the distribution ID in your settings
+        self.cloudfront_client.create_invalidation(
+            DistributionId=distribution_id,
+            InvalidationBatch={
+                'Paths': {
+                    'Quantity': len(paths),
+                    'Items': paths
+                },
+                'CallerReference': str(hash(frozenset(paths)))  # Unique reference for each invalidation
+            }
         )
-        c.create_invalidation_request(settings.S3_DOMAIN, paths)

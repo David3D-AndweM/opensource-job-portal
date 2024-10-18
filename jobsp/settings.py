@@ -88,7 +88,7 @@ DATABASES = {
 }
 
 
-TIME_ZONE = "Asia/Calcutta"
+TIME_ZONE = "Africa/Lusaka"
 
 LANGUAGE_CODE = "en-us"
 
